@@ -1,8 +1,9 @@
-﻿using Newtonsoft.Json;
+using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
 using System.Data.SqlClient;
 using System.Configuration;
+using System.Data;
 
 namespace GADataFetcherAppClass
 {
@@ -39,6 +40,69 @@ namespace GADataFetcherAppClass
         public class dimensionsClass
         {
             public string name { get; set; }
+        }
+
+        public class MetricHeaderEntry
+        {
+            public string name { get; set; }
+            public string type { get; set; }
+        }
+
+        public class MetricHeader
+        {
+            public List<MetricHeaderEntry> metricHeaderEntries { get; set; }
+        }
+
+        public class ColumnHeader
+        {
+            public List<string> dimensions { get; set; }
+            public MetricHeader metricHeader { get; set; }
+        }
+
+        public class Metric
+        {
+            public List<string> values { get; set; }
+        }
+
+        public class Row
+        {
+            public List<string> dimensions { get; set; }
+            public List<Metric> metrics { get; set; }
+        }
+
+        public class Total
+        {
+            public List<string> values { get; set; }
+        }
+
+        public class Minimum
+        {
+            public List<string> values { get; set; }
+        }
+
+        public class Maximum
+        {
+            public List<string> values { get; set; }
+        }
+
+        public class Data
+        {
+            public List<Row> rows { get; set; }
+            public List<Total> totals { get; set; }
+            public int rowCount { get; set; }
+            public List<Minimum> minimums { get; set; }
+            public List<Maximum> maximums { get; set; }
+        }
+
+        public class Report
+        {
+            public ColumnHeader columnHeader { get; set; }
+            public Data data { get; set; }
+        }
+
+        public class RootObject
+        {
+            public List<Report> reports { get; set; }
         }
 
         static void Main(string[] args)
@@ -150,13 +214,29 @@ namespace GADataFetcherAppClass
 
         public static void InsertResponseToDB(string content)
         {
-            Console.WriteLine(content);
-            var json = JsonConvert.DeserializeObject(content);
+            try
+            {
+                RootObject items = JsonConvert.DeserializeObject<RootObject>(content);
 
-            // Insert in DB Now ???????????????????
+                for (int reportCount = 0; reportCount < items.reports.Count; ++reportCount)
+                {
+                    for (int rowCount = 0; rowCount < items.reports[reportCount].data.rows.Count; ++rowCount)
+                    {
+                        for (int dimCount = 0; dimCount < items.reports[reportCount].data.rows[rowCount].dimensions.Count; ++dimCount)
+                        {
+                            Console.WriteLine(items.reports[reportCount].data.rows[rowCount].dimensions[dimCount]);
 
+                        }
+                    }
 
+                }
+            }
+            catch ( Exception ex)
+            {
+                Console.WriteLine(" Something is wrong " + ex.Message);
+            }
         }
+
         public static void BuildRequestNInsertIntoDB(fullRequestBodyClass fullRequest)
         {
             var client = new RestSharp.RestClient("https://apps.getpy.biz/googleanalytics");
