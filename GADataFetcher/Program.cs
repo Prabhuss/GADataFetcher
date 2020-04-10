@@ -7,7 +7,7 @@ using System.Data;
 
 namespace GADataFetcherAppClass
 {
-    class Program
+    public static class Program
     {
         public class fullRequestBodyClass
         {
@@ -114,9 +114,12 @@ namespace GADataFetcherAppClass
 
                 List<string> emailIds = new List<string>();
                 List<string> viewIds = new List<string>();
+                List<int> UserIds = new List<int>();
+
+                DataTable datatable = new DataTable();
 
                 String connectionString = ConfigurationManager.ConnectionStrings["DBConnection"].ConnectionString;
-                string queryJson = "SELECT email,JSON_VALUE(ViewsInfo,'$[0].viewId') AS viewId FROM Integrations where Integrationtype='Google Analytics'";
+                string queryJson = "SELECT email,Userid,JSON_VALUE(ViewsInfo,'$[0].viewId') AS viewId FROM Integrations where Integrationtype='Google Analytics'";
 
                 //opening the connection to Database
                 using (SqlConnection con = new SqlConnection(connectionString))
@@ -130,6 +133,7 @@ namespace GADataFetcherAppClass
                         {
                             // get the results of each column
                             emailIds.Add((string)reader["email"]);
+                            UserIds.Add((int)reader["UserId"]);
                             viewIds.Add((string)reader["viewId"]);
 
                         }
@@ -140,7 +144,8 @@ namespace GADataFetcherAppClass
                 {
                     Console.WriteLine("========================================================================================");
                     Console.WriteLine(" Getiing Data for Email Id As " + emailIds[i]);
-                    FilltheDatainObject(emailIds[i], viewIds[i], "60daysAgo", "yesterday", dimVal, metricsVal);
+                    FilltheDatainObject(emailIds[i], viewIds[i],UserIds[i], "60daysAgo", "yesterday", dimVal, metricsVal);
+                   
                     Console.WriteLine("===========================================================================================");
                 }
             }
@@ -171,7 +176,7 @@ namespace GADataFetcherAppClass
             return metricsVal;
         }
 
-        public static fullRequestBodyClass FilltheDatainObject(string emailId, string viewId, string startDate, string endDate,
+        public static fullRequestBodyClass FilltheDatainObject(string emailId, string viewId,int Userid, string startDate, string endDate,
                                                     List<string> dimVal, List<string> metricsVal)
         {
             reportRequestsClass reportRequestTempObject = new reportRequestsClass();
@@ -208,36 +213,108 @@ namespace GADataFetcherAppClass
             fullRequestTempObject.email = emailId;
             fullRequestTempObject.report = reportTempObject;
 
-            BuildRequestNInsertIntoDB(fullRequestTempObject);
+            BuildRequestNInsertIntoDB(fullRequestTempObject,Userid);
             return fullRequestTempObject;
         }
 
-        public static void InsertResponseToDB(string content)
+        public static void InsertResponseToDB(string content,int  Userid)
         {
+            DataTable datatable = new DataTable();
+            DataRow dr1 = datatable.NewRow();
+            List<string> rowdata = new List<string>();
             try
             {
                 RootObject items = JsonConvert.DeserializeObject<RootObject>(content);
 
+                // Read Col Header
+                //add UserId as as a column
+                datatable.Columns.Add("UserId");
+                for (int i = 0; i < items.reports[0].columnHeader.dimensions.Count; i++)
+                {
+                    var header=items.reports[0].columnHeader.dimensions[i].Split(':');
+                    datatable.Columns.Add(header[1]);
+                }
+
+                // Read the Data
+                
                 for (int reportCount = 0; reportCount < items.reports.Count; ++reportCount)
                 {
                     for (int rowCount = 0; rowCount < items.reports[reportCount].data.rows.Count; ++rowCount)
                     {
+                        rowdata.Clear();
                         for (int dimCount = 0; dimCount < items.reports[reportCount].data.rows[rowCount].dimensions.Count; ++dimCount)
                         {
-                            Console.WriteLine(items.reports[reportCount].data.rows[rowCount].dimensions[dimCount]);
+                            rowdata.Add(items.reports[reportCount].data.rows[rowCount].dimensions[dimCount]);
 
                         }
+                        dr1["UserId"] = Userid;
+                        int i = 1;
+                        while(i<datatable.Columns.Count)
+                        {
+                            for (int j = 0; j < rowdata.Count; j++)
+                            {
+                                dr1[i] = rowdata[j];
+                                i++;
+                            }
+                            
+
+                        }
+                        datatable.Rows.Add(dr1.ItemArray);
+
                     }
 
                 }
+                if (datatable != null)
+                    InsertDataIntoSQLServer(datatable, Userid);
+
+
+
             }
-            catch ( Exception ex)
+            
+             catch (Exception ex)
             {
                 Console.WriteLine(" Something is wrong " + ex.Message);
             }
         }
 
-        public static void BuildRequestNInsertIntoDB(fullRequestBodyClass fullRequest)
+        private static void InsertDataIntoSQLServer(DataTable datatable,int Userid)
+        {
+            try
+            {  //read the credentials of datatbase
+                var connectionstring = ConfigurationManager.ConnectionStrings["DBConnection"].ConnectionString;
+                using (SqlConnection dbConnection = new SqlConnection(connectionstring))
+                {
+                    dbConnection.Open();
+                    using (SqlBulkCopy s = new SqlBulkCopy(dbConnection))
+                    {
+                        s.DestinationTableName = "google_users_updated_final";
+                        s.BatchSize = 50;
+
+                        // Add your column mappings here
+                        foreach (DataColumn column in datatable.Columns)
+                        {
+                            s.ColumnMappings.Add(column.ColumnName, column.ColumnName);
+                        }
+
+                        // Finally write to server
+                        s.WriteToServer(datatable);
+
+                        Console.WriteLine("Data stored in {0} table", s.DestinationTableName);
+                    }
+                   
+                }
+               
+
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine(ex.Message);
+            }
+
+
+        }
+
+        public static void BuildRequestNInsertIntoDB(fullRequestBodyClass fullRequest,int Userid)
         {
             var client = new RestSharp.RestClient("https://apps.getpy.biz/googleanalytics");
             var request = new RestSharp.RestRequest("/", RestSharp.Method.POST);
@@ -250,7 +327,7 @@ namespace GADataFetcherAppClass
             var content = response.Content; // raw content as string
 
             // Insert Received Data User Table
-            InsertResponseToDB(content);
+            InsertResponseToDB(content,Userid);
         }
     }
 }

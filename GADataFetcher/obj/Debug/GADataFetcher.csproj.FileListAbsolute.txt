@@ -9,3 +9,15 @@ C:\Users\kirti\Desktop\GADataFetcher\GADataFetcher\obj\Debug\GADataFetcher.cspro
 C:\Users\kirti\Desktop\GADataFetcher\GADataFetcher\obj\Debug\GADataFetcher.csproj.CoreCompileInputs.cache
 C:\Users\kirti\Desktop\GADataFetcher\GADataFetcher\obj\Debug\GADataFetcher.exe
 C:\Users\kirti\Desktop\GADataFetcher\GADataFetcher\obj\Debug\GADataFetcher.pdb
+C:\Users\anjumvm\Desktop\GADataFetcher\GADataFetcher\bin\Debug\GADataFetcher.exe.config
+C:\Users\anjumvm\Desktop\GADataFetcher\GADataFetcher\bin\Debug\GADataFetcher.exe
+C:\Users\anjumvm\Desktop\GADataFetcher\GADataFetcher\bin\Debug\GADataFetcher.pdb
+C:\Users\anjumvm\Desktop\GADataFetcher\GADataFetcher\bin\Debug\Newtonsoft.Json.dll
+C:\Users\anjumvm\Desktop\GADataFetcher\GADataFetcher\bin\Debug\RestSharp.dll
+C:\Users\anjumvm\Desktop\GADataFetcher\GADataFetcher\bin\Debug\Newtonsoft.Json.xml
+C:\Users\anjumvm\Desktop\GADataFetcher\GADataFetcher\bin\Debug\RestSharp.xml
+C:\Users\anjumvm\Desktop\GADataFetcher\GADataFetcher\obj\Debug\GADataFetcher.csproj.CoreCompileInputs.cache
+C:\Users\anjumvm\Desktop\GADataFetcher\GADataFetcher\obj\Debug\GADataFetcher.csproj.CopyComplete
+C:\Users\anjumvm\Desktop\GADataFetcher\GADataFetcher\obj\Debug\GADataFetcher.exe
+C:\Users\anjumvm\Desktop\GADataFetcher\GADataFetcher\obj\Debug\GADataFetcher.pdb
+C:\Users\anjumvm\Desktop\GADataFetcher\GADataFetcher\obj\Debug\GADataFetcher.csprojAssemblyReference.cache
